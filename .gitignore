@@ -1,6 +1,6 @@
 tmp/
 .vscode/
 *.svg
+.DS_Store
 relatorio_final.pdf
 examples/all-charts/out/
-# *.png

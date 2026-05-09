@@ -3,6 +3,7 @@ package mchart
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -10,68 +11,103 @@ import (
 	"testing"
 )
 
-func TestRenderPNGFromSVGBasicNative(t *testing.T) {
-	chart := buildSpiderChartFixture()
-	svg, err := chart.RenderSVG()
+func TestRenderPNGFromSVGCanvasBackend(t *testing.T) {
+	svg := `<svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg"><style>text{font-family:"Inter","Arial",sans-serif;font-size:16px;}</style><rect width="120" height="60" fill="#ffffff"/><text x="10" y="30">Olá</text></svg>`
+	pngData, err := RenderPNGFromSVG(svg, PNGOptions{Backend: PNGBackendCanvas})
 	if err != nil {
-		t.Fatalf("RenderSVG failed: %v", err)
+		t.Fatalf("RenderPNGFromSVG canvas backend failed: %v", err)
 	}
-
-	pngData, err := RenderPNGFromSVG(svg, PNGOptions{Backend: PNGBackendNative, Width: 480, Height: 320})
-	if err != nil {
-		t.Fatalf("RenderPNGFromSVG failed: %v", err)
-	}
-	assertPNGSize(t, pngData, 480, 320)
+	assertPNGSize(t, pngData, 120, 60)
 }
 
 func TestRenderPNGFromSVGScale(t *testing.T) {
 	svg := `<svg viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="50" fill="#ffffff"/></svg>`
-	pngData, err := RenderPNGFromSVG(svg, PNGOptions{Backend: PNGBackendNative, Scale: 2})
+	pngData, err := RenderPNGFromSVG(svg, PNGOptions{Backend: PNGBackendCanvas, Scale: 2})
 	if err != nil {
 		t.Fatalf("RenderPNGFromSVG failed: %v", err)
 	}
 	assertPNGSize(t, pngData, 200, 100)
 }
 
-func TestRenderPNGFromSVGAutoFallback(t *testing.T) {
-	origNative := rasterizeNativeFunc
+func TestRenderPNGFromSVGAutoPrefersRSVG(t *testing.T) {
 	origRSVG := rasterizeRSVGFunc
+	origCanvas := rasterizeCanvasFunc
 	t.Cleanup(func() {
-		rasterizeNativeFunc = origNative
 		rasterizeRSVGFunc = origRSVG
+		rasterizeCanvasFunc = origCanvas
 	})
 
-	rasterizeNativeFunc = func(svg string, opts PNGOptions) ([]byte, error) {
-		return nil, errors.New("native failed")
-	}
+	rsvgCalls := 0
+	canvasCalls := 0
+
 	rasterizeRSVGFunc = func(svg string, opts PNGOptions) ([]byte, error) {
+		rsvgCalls++
+		return solidPNG(t, opts.Width, opts.Height), nil
+	}
+	rasterizeCanvasFunc = func(svg string, opts PNGOptions) ([]byte, error) {
+		canvasCalls++
+		return nil, fmt.Errorf("canvas should not be called when rsvg succeeds")
+	}
+
+	svg := `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"></svg>`
+	pngData, err := RenderPNGFromSVG(svg, PNGOptions{Backend: PNGBackendAuto})
+	if err != nil {
+		t.Fatalf("RenderPNGFromSVG with auto backend failed: %v", err)
+	}
+	assertPNGSize(t, pngData, 60, 40)
+	if rsvgCalls != 1 {
+		t.Fatalf("expected rsvg to be called once, got %d", rsvgCalls)
+	}
+	if canvasCalls != 0 {
+		t.Fatalf("expected canvas to not be called when rsvg succeeds, got %d calls", canvasCalls)
+	}
+}
+
+func TestRenderPNGFromSVGAutoFallsBackToCanvas(t *testing.T) {
+	origRSVG := rasterizeRSVGFunc
+	origCanvas := rasterizeCanvasFunc
+	t.Cleanup(func() {
+		rasterizeRSVGFunc = origRSVG
+		rasterizeCanvasFunc = origCanvas
+	})
+
+	canvasCalls := 0
+
+	rasterizeRSVGFunc = func(svg string, opts PNGOptions) ([]byte, error) {
+		return nil, errors.New("rsvg failed")
+	}
+	rasterizeCanvasFunc = func(svg string, opts PNGOptions) ([]byte, error) {
+		canvasCalls++
 		return solidPNG(t, opts.Width, opts.Height), nil
 	}
 
 	svg := `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"></svg>`
 	pngData, err := RenderPNGFromSVG(svg, PNGOptions{Backend: PNGBackendAuto})
 	if err != nil {
-		t.Fatalf("RenderPNGFromSVG with auto fallback failed: %v", err)
+		t.Fatalf("RenderPNGFromSVG with auto backend failed: %v", err)
 	}
 	assertPNGSize(t, pngData, 60, 40)
+	if canvasCalls != 1 {
+		t.Fatalf("expected canvas to be called once, got %d", canvasCalls)
+	}
 }
 
 func TestRenderPNGFromSVGAutoDoubleFailure(t *testing.T) {
-	origNative := rasterizeNativeFunc
 	origRSVG := rasterizeRSVGFunc
+	origCanvas := rasterizeCanvasFunc
 	t.Cleanup(func() {
-		rasterizeNativeFunc = origNative
 		rasterizeRSVGFunc = origRSVG
+		rasterizeCanvasFunc = origCanvas
 	})
 
-	errNative := errors.New("native boom")
 	errRSVG := errors.New("rsvg boom")
+	errCanvas := errors.New("canvas boom")
 
-	rasterizeNativeFunc = func(svg string, opts PNGOptions) ([]byte, error) {
-		return nil, errNative
-	}
 	rasterizeRSVGFunc = func(svg string, opts PNGOptions) ([]byte, error) {
 		return nil, errRSVG
+	}
+	rasterizeCanvasFunc = func(svg string, opts PNGOptions) ([]byte, error) {
+		return nil, errCanvas
 	}
 
 	svg := `<svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg"></svg>`
@@ -87,8 +123,8 @@ func TestRenderPNGFromSVGAutoDoubleFailure(t *testing.T) {
 	if len(renderErr.Attempts) != 2 {
 		t.Fatalf("expected 2 attempts, got %d", len(renderErr.Attempts))
 	}
-	if !strings.Contains(err.Error(), "native") || !strings.Contains(err.Error(), "rsvg") {
-		t.Fatalf("error should mention both backends: %v", err)
+	if !strings.Contains(err.Error(), "rsvg") || !strings.Contains(err.Error(), "canvas") {
+		t.Fatalf("error should mention all backends: %v", err)
 	}
 }
 

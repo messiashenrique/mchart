@@ -11,41 +11,20 @@ import (
 
 func main() {
 	type chartOutput struct {
-		name string
-		svg  string
+		name  string
+		chart interface {
+			RenderSVG() (string, error)
+			RenderPNG(opts mchart.PNGOptions) ([]byte, error)
+		}
 	}
 
 	outputs := make([]chartOutput, 0, 5)
 
-	columnSVG, err := buildColumnExampleChart().RenderSVG()
-	if err != nil {
-		log.Fatalf("falha ao gerar svg de colunas: %v", err)
-	}
-	outputs = append(outputs, chartOutput{name: "column_chart.svg", svg: columnSVG})
-
-	spiderSVG, err := buildSpiderExampleChart().RenderSVG()
-	if err != nil {
-		log.Fatalf("falha ao gerar svg de spider: %v", err)
-	}
-	outputs = append(outputs, chartOutput{name: "spider_chart.svg", svg: spiderSVG})
-
-	barSVG, err := buildBarExampleChart().RenderSVG()
-	if err != nil {
-		log.Fatalf("falha ao gerar svg de barras horizontais: %v", err)
-	}
-	outputs = append(outputs, chartOutput{name: "bar_chart.svg", svg: barSVG})
-
-	donutSVG, err := buildDonutExampleChart().RenderSVG()
-	if err != nil {
-		log.Fatalf("falha ao gerar svg de rosca: %v", err)
-	}
-	outputs = append(outputs, chartOutput{name: "donut_chart.svg", svg: donutSVG})
-
-	splineSVG, err := buildSplineExampleChart().RenderSVG()
-	if err != nil {
-		log.Fatalf("falha ao gerar svg de spline: %v", err)
-	}
-	outputs = append(outputs, chartOutput{name: "spline_chart.svg", svg: splineSVG})
+	outputs = append(outputs, chartOutput{name: "column_chart", chart: buildColumnExampleChart()})
+	outputs = append(outputs, chartOutput{name: "spider_chart", chart: buildSpiderExampleChart()})
+	outputs = append(outputs, chartOutput{name: "bar_chart", chart: buildBarExampleChart()})
+	outputs = append(outputs, chartOutput{name: "donut_chart", chart: buildDonutExampleChart()})
+	outputs = append(outputs, chartOutput{name: "spline_chart", chart: buildSplineExampleChart()})
 
 	outputDir := filepath.Join("examples", "all-charts", "out")
 	if err := os.MkdirAll(outputDir, 0o755); err != nil {
@@ -53,14 +32,26 @@ func main() {
 	}
 
 	for _, output := range outputs {
-		if output.svg == "" {
-			log.Fatalf("falha ao gerar SVG: %s", output.name)
+		svg, err := output.chart.RenderSVG()
+		if err != nil {
+			log.Fatalf("falha ao gerar svg de %s: %v", output.name, err)
 		}
-		outputFile := filepath.Join(outputDir, output.name)
-		if err := os.WriteFile(outputFile, []byte(output.svg), 0o644); err != nil {
-			log.Fatalf("erro ao salvar %s: %v", outputFile, err)
+
+		svgFile := filepath.Join(outputDir, output.name+".svg")
+		if err := os.WriteFile(svgFile, []byte(svg), 0o644); err != nil {
+			log.Fatalf("erro ao salvar %s: %v", svgFile, err)
 		}
-		fmt.Printf("Sucesso! Arquivo salvo em: %s\n", outputFile)
+		fmt.Printf("Sucesso! Arquivo salvo em: %s\n", svgFile)
+
+		pngData, err := output.chart.RenderPNG(mchart.PNGOptions{})
+		if err != nil {
+			log.Fatalf("falha ao gerar png de %s: %v", output.name, err)
+		}
+		pngFile := filepath.Join(outputDir, output.name+".png")
+		if err := os.WriteFile(pngFile, pngData, 0o644); err != nil {
+			log.Fatalf("erro ao salvar %s: %v", pngFile, err)
+		}
+		fmt.Printf("Sucesso! Arquivo salvo em: %s\n", pngFile)
 	}
 }
 

@@ -377,7 +377,7 @@ func TestWriteSVGAndWritePNG(t *testing.T) {
 		t.Fatalf("WriteSVG did not create file: %v", err)
 	}
 
-	if err := chart.WritePNG(pngPath, PNGOptions{Backend: PNGBackendNative, Width: 320, Height: 240}); err != nil {
+	if err := chart.WritePNG(pngPath, PNGOptions{Backend: PNGBackendCanvas, Width: 320, Height: 240}); err != nil {
 		t.Fatalf("WritePNG failed: %v", err)
 	}
 

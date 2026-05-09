@@ -1,30 +1,23 @@
 package mchart
 
 import (
-	"bytes"
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"image"
 	"image/color"
-	"image/draw"
-	"image/png"
 	"io"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-
-	"github.com/srwiley/oksvg"
-	"github.com/srwiley/rasterx"
 )
 
 type PNGBackend string
 
 const (
 	PNGBackendAuto   PNGBackend = "auto"
-	PNGBackendNative PNGBackend = "native"
 	PNGBackendRSVG   PNGBackend = "rsvg"
+	PNGBackendCanvas PNGBackend = "canvas"
 )
 
 type PNGOptions struct {
@@ -72,8 +65,8 @@ type commandRunner interface {
 type execCommand func(name string, args ...string) commandRunner
 
 var (
-	rasterizeNativeFunc             = rasterizeNative
 	rasterizeRSVGFunc               = rasterizeRSVG
+	rasterizeCanvasFunc             = rasterizeCanvas
 	execLookPath                    = exec.LookPath
 	execCommandFactory  execCommand = func(name string, args ...string) commandRunner {
 		return exec.Command(name, args...)
@@ -109,32 +102,31 @@ func RenderPNGFromSVG(svg string, opts PNGOptions) ([]byte, error) {
 	switch backend {
 	case PNGBackendAuto:
 		attempts := make([]BackendAttemptError, 0, 2)
-
-		pngData, nativeErr := rasterizeNativeFunc(normalizedSVG, resolved)
-		if nativeErr == nil {
-			return pngData, nil
-		}
-		attempts = append(attempts, BackendAttemptError{Backend: PNGBackendNative, Err: nativeErr})
-
 		pngData, rsvgErr := rasterizeRSVGFunc(normalizedSVG, resolved)
 		if rsvgErr == nil {
 			return pngData, nil
 		}
 		attempts = append(attempts, BackendAttemptError{Backend: PNGBackendRSVG, Err: rsvgErr})
 
-		return nil, &PNGRenderError{Attempts: attempts}
-
-	case PNGBackendNative:
-		pngData, err := rasterizeNativeFunc(normalizedSVG, resolved)
-		if err != nil {
-			return nil, &PNGRenderError{Attempts: []BackendAttemptError{{Backend: PNGBackendNative, Err: err}}}
+		pngData, canvasErr := rasterizeCanvasFunc(normalizedSVG, resolved)
+		if canvasErr == nil {
+			return pngData, nil
 		}
-		return pngData, nil
+		attempts = append(attempts, BackendAttemptError{Backend: PNGBackendCanvas, Err: canvasErr})
+
+		return nil, &PNGRenderError{Attempts: attempts}
 
 	case PNGBackendRSVG:
 		pngData, err := rasterizeRSVGFunc(normalizedSVG, resolved)
 		if err != nil {
 			return nil, &PNGRenderError{Attempts: []BackendAttemptError{{Backend: PNGBackendRSVG, Err: err}}}
+		}
+		return pngData, nil
+
+	case PNGBackendCanvas:
+		pngData, err := rasterizeCanvasFunc(normalizedSVG, resolved)
+		if err != nil {
+			return nil, &PNGRenderError{Attempts: []BackendAttemptError{{Backend: PNGBackendCanvas, Err: err}}}
 		}
 		return pngData, nil
 
@@ -256,33 +248,6 @@ func parseLength(v string) (float64, error) {
 		return 0, ErrInvalidDimensions
 	}
 	return strconv.ParseFloat(t, 64)
-}
-
-// rasterizeNative renders SVG using a pure-Go pipeline (oksvg+rasterx).
-// Limitation: it does not fully support all SVG 2.0/CSS features.
-func rasterizeNative(svg string, opts PNGOptions) ([]byte, error) {
-	icon, err := oksvg.ReadIconStream(strings.NewReader(svg))
-	if err != nil {
-		return nil, err
-	}
-
-	icon.SetTarget(0, 0, float64(opts.Width), float64(opts.Height))
-
-	img := image.NewRGBA(image.Rect(0, 0, opts.Width, opts.Height))
-	if bg, ok := parseHexColor(opts.Background); ok {
-		draw.Draw(img, img.Bounds(), &image.Uniform{C: bg}, image.Point{}, draw.Src)
-	}
-
-	scanner := rasterx.NewScannerGV(opts.Width, opts.Height, img, img.Bounds())
-	dasher := rasterx.NewDasher(opts.Width, opts.Height, scanner)
-	icon.Draw(dasher, 1.0)
-
-	var out bytes.Buffer
-	if err := png.Encode(&out, img); err != nil {
-		return nil, err
-	}
-
-	return out.Bytes(), nil
 }
 
 func rasterizeRSVG(svg string, opts PNGOptions) ([]byte, error) {
