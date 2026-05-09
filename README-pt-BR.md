@@ -1,6 +1,6 @@
 # mchart
 
-🇬🇧 **[See in english](README-pt-BR.md)**
+🇬🇧 **[See in english](README.md)**
 
 Biblioteca Go para geração de gráficos estáticos (SVG/PNG), focada em relatórios e PDFs.  
 Go library for static chart generation (SVG/PNG), focused on reports and PDFs.
@@ -60,7 +60,7 @@ chart := mchart.NewColumnChart("Portarias emitidas.", cards)
 chart.ValueMode = mchart.ValueModeNumber
 ```
 
-![image](images/columns.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/columns.png)
 
 
 #### 2) SpiderChart (Gráfico Polar / Gráfico Radar)
@@ -75,7 +75,7 @@ chart := mchart.NewSpiderChart(labels, datasets)
 chart.Title = "Desempenho por área"
 ```
 
-![image](images/spider.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/spider.png)
 
 #### 3) BarChart (Gráfico de Barras)
 
@@ -89,7 +89,7 @@ chart := mchart.NewBarChart("Resumo de acertos", items)
 chart.Tipo = mchart.BarTypePercent
 ```
 
-![image](images/bars.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/bars.png)
 
 #### 4) DonutChart
 
@@ -102,7 +102,7 @@ slices := []mchart.DonutSlice{
 chart := mchart.NewDonutChart("Resumo por série", slices)
 ```
 
-![image](images/donut.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/donut.png)
 
 
 #### 5) SplineChart (Gráfico de Linhas em Curvas Suaves e Áreas)
@@ -117,7 +117,7 @@ chart := mchart.NewSplineChart("Resumo por mês", labels, series)
 chart.Theme = mchart.SplineThemeLight
 ```
 
-![image](images/spline.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/spline.png)
 
 ### Temas e cores padrão
 

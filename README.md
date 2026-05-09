@@ -1,6 +1,6 @@
 # mchart
 
-🇧🇷 **[Veja em Português](README.md)**
+🇧🇷 **[Veja em Português](README-pt-BR.md)**
 
 Go library for static chart generation (SVG/PNG), focused on reports and PDFs.
 
@@ -60,7 +60,7 @@ chart := mchart.NewColumnChart("Portarias emitidas.", cards)
 chart.ValueMode = mchart.ValueModeNumber
 ```
 
-![image](images/columns.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/columns.png)
 
 #### 2) SpiderChart
 
@@ -74,7 +74,7 @@ chart := mchart.NewSpiderChart(labels, datasets)
 chart.Title = "Desempenho por área"
 ```
 
-![image](images/spider.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/spider.png)
 
 #### 3) BarChart
 
@@ -88,7 +88,7 @@ chart := mchart.NewBarChart("Resumo de acertos", items)
 chart.Tipo = mchart.BarTypePercent
 ```
 
-![image](images/bars.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/bars.png)
 
 #### 4) DonutChart
 
@@ -101,7 +101,7 @@ slices := []mchart.DonutSlice{
 chart := mchart.NewDonutChart("Resumo por série", slices)
 ```
 
-![image](images/donut.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/donut.png)
 
 #### 5) SplineChart
 
@@ -115,7 +115,7 @@ chart := mchart.NewSplineChart("Resumo por mês", labels, series)
 chart.Theme = mchart.SplineThemeLight
 ```
 
-![image](images/spline.png)
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/spline.png)
 
 ### Themes and default colors
 
