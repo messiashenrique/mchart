@@ -146,6 +146,6 @@ Arquivos gerados em: `examples/all-charts/out/`.
 
 ### Versão
 
-`v0.1.0`
+`v0.1.1`
 
 ---
