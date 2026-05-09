@@ -1,0 +1,7 @@
+<svg viewBox="0 0 760 334" xmlns="http://www.w3.org/2000/svg"><style>
+		.title { fill: #111111; font-size: 28px; font-weight: 600; }
+		.row-label { fill: #333333; font-size: 20px; font-weight: 500; }
+		.row-value { fill: #111111; font-size: 22px; font-weight: 600; }
+		.track { fill: #dfdfdf; }
+		text { font-family: "Inter", "Segoe UI", "Roboto", "Arial", sans-serif; }
+	</style><text class="title" x="24" y="48">Resumo de acertos</text><text class="row-label" x="24.00" y="102.00">Parte específica (10/20)</text><text class="row-value" x="736.00" y="102.00" text-anchor="end">50,00%</text><rect class="track" x="24.00" y="114.00" width="712.00" height="14.00" rx="6" /><rect x="24.00" y="114.00" width="356.00" height="14.00" rx="6" fill="#8b5cf6" /><text class="row-label" x="24.00" y="178.00">Parte não específica (19/80)</text><text class="row-value" x="736.00" y="178.00" text-anchor="end">23,75%</text><rect class="track" x="24.00" y="190.00" width="712.00" height="14.00" rx="6" /><rect x="24.00" y="190.00" width="169.10" height="14.00" rx="6" fill="#24bc86" /><text class="row-label" x="24.00" y="254.00">Percentual global (29/100)</text><text class="row-value" x="736.00" y="254.00" text-anchor="end">29,00%</text><rect class="track" x="24.00" y="266.00" width="712.00" height="14.00" rx="6" /><rect x="24.00" y="266.00" width="206.48" height="14.00" rx="6" fill="#ef4444" /></svg>

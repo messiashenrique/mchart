@@ -1,0 +1,6 @@
+tmp/
+.vscode/
+*.svg
+relatorio_final.pdf
+examples/all-charts/out/
+*.png
