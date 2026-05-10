@@ -86,13 +86,13 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 
 	fmt.Fprintf(&b, `<svg viewBox="0 0 %d %d" xmlns="http://www.w3.org/2000/svg">`, canvasWidth, canvasHeight)
 	fmt.Fprintf(&b, `<style>
-		.title { fill: %s; font-size: 30px; font-weight: 600; }
+		.title { fill: %s; font-size: 21px; font-weight: 600; }
 		.card { fill: %s; fill-opacity: 0.88; stroke: %s; stroke-width: 1; }
-		.card-title { fill: %s; font-size: 25px; font-weight: 600; }
+		.card-title { fill: %s; font-size: 19px; font-weight: 600; }
 		.bar-slot { fill: %s; stroke: %s; stroke-width: 1; }
-		.bar-label { fill: %s; font-size: 23px; font-weight: 700; }
-		.bar-value { fill: %s; font-size: 20px; font-weight: 500; }
-		.legend-text { fill: %s; font-size: 18px; font-weight: 500; }
+		.bar-label { fill: %s; font-size: 19px; font-weight: 700; }
+		.bar-value { fill: %s; font-size: 18px; font-weight: 500; }
+		.legend-text { fill: %s; font-size: 16px; font-weight: 500; }
 		text { font-family: "Inter", "Segoe UI", "Roboto", "Arial", sans-serif; }
 	</style>`, colors.title, colors.cardFill, colors.cardStroke, colors.cardTitle, colors.barSlotFill, colors.barSlotStroke, colors.barLabel, colors.barValue, colors.legendText)
 
@@ -110,14 +110,14 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 		fmt.Fprintf(&b, `<rect class="card" x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="14" />`, cardX, cardY, cardW, cardH)
 
 		innerPad := 16.0
-		headerY := cardY + 38
+		headerY := cardY + 30
 		fmt.Fprintf(&b, `<text class="card-title" x="%.2f" y="%.2f">%s</text>`, cardX+innerPad, headerY, html.EscapeString(card.Title))
 
 		if len(card.Bars) == 0 {
 			continue
 		}
 
-		barsY := cardY + 56
+		barsY := cardY + 45
 		barsAreaW := cardW - (innerPad * 2)
 		barsCount := float64(len(card.Bars))
 		gap := 16.0
@@ -183,13 +183,13 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 			fmt.Fprintf(&b, `<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="10" fill="%s" />`, x+inset, fillY, barW-(inset*2), fillH, fillColor)
 
 			labelX := x + (barW / 2)
-			labelY := barsY + barH + 34
+			labelY := barsY + barH + 25
 			fmt.Fprintf(&b, `<text class="bar-label" x="%.2f" y="%.2f" text-anchor="middle">%s</text>`, labelX, labelY, html.EscapeString(displayLabels[bi]))
-			fmt.Fprintf(&b, `<text class="bar-value" x="%.2f" y="%.2f" text-anchor="middle">%s</text>`, labelX, labelY+34, cc.formatValue(value))
+			fmt.Fprintf(&b, `<text class="bar-value" x="%.2f" y="%.2f" text-anchor="middle">%s</text>`, labelX, labelY+30, cc.formatValue(value))
 		}
 
 		if showLegend {
-			legendY := barsY + barH + 110
+			legendY := barsY + barH + 90
 			legendX := cardX + innerPad
 			legendMaxWidth := cardW - (innerPad * 2)
 			lineHeight := 24.0
@@ -334,13 +334,13 @@ func (cc *ColumnChart) shouldShowLegend(bars []ColumnBar, barW float64) bool {
 		return false
 	}
 
-	maxTextWidth := barW - 8
+	maxTextWidth := barW - 2
 	for _, bar := range bars {
 		label := strings.TrimSpace(bar.Label)
 		if label == "" {
 			continue
 		}
-		if estimateTextWidth(label, 20) > maxTextWidth {
+		if estimateTextWidth(label, 19) > maxTextWidth {
 			return true
 		}
 	}

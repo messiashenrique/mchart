@@ -110,7 +110,7 @@ func (sc *SpiderChart) RenderSVG() (string, error) {
 	legendLineHeight := 22.0
 	legendRowGap := 16.0
 	legendColGapMin := 24.0
-	legendTopY := float64(sc.Size) - 10.0
+	legendTopY := float64(sc.Size) - 50.0
 	legendSidePadding := 10.0
 
 	entries := make([]legendEntry, 0, len(sc.Datasets))
@@ -227,7 +227,7 @@ func (sc *SpiderChart) RenderSVG() (string, error) {
 		legendBottomY = legendTopY + float64(layout.rows-1)*legendLineHeight
 	}
 	svgHeight := int(math.Ceil(legendBottomY + 28))
-	minHeight := sc.Size + 80
+	minHeight := sc.Size + 10
 	if svgHeight < minHeight {
 		svgHeight = minHeight
 	}
@@ -236,10 +236,10 @@ func (sc *SpiderChart) RenderSVG() (string, error) {
 
 	fmt.Fprintf(&b, `<svg viewBox="0 0 %d %d" xmlns="http://www.w3.org/2000/svg" style="font-family: sans-serif;">`, sc.Size, svgHeight)
 	fmt.Fprintf(&b, `<style>
-		.title { fill: %s; font-size: 26px; font-weight: 600; }
+		.title { fill: %s; font-size: 21px; font-weight: 600; }
 		.grid { fill: none; stroke: %s; stroke-opacity: %g; stroke-width: 1; }
 		.axis { stroke: %s; stroke-opacity: %g; stroke-width: 1; }
-		.label { fill: %s; font-size: 12px; font-weight: bold; }
+		.label { fill: %s; font-size: 14px; font-weight: bold; }
 		.legend-text { fill: %s; font-size: 14px; }
 	</style>`, colors.titleText, colors.gridStroke, colors.gridOpacity, colors.axisStroke, colors.axisOpacity, colors.labelFill, colors.legendText)
 
@@ -435,7 +435,7 @@ func (sc *SpiderChart) resolveStyleColors() spiderStyleColors {
 		gridOpacity: 0.1,
 		axisStroke:  "#000000",
 		axisOpacity: 0.1,
-		labelFill:   "#555",
+		labelFill:   "#333",
 		legendText:  "#333",
 	}
 }
