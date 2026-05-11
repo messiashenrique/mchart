@@ -174,6 +174,53 @@ func TestColumnManualColorOverridesAutoRule(t *testing.T) {
 	}
 }
 
+func TestColumnAutoHeightAdaptsToLegendRows(t *testing.T) {
+	cards := []ColumnCard{{
+		Title: "A",
+		Bars: []ColumnBar{
+			{Label: "Legenda longa item um", Value: 95},
+			{Label: "Legenda longa item dois", Value: 85},
+			{Label: "Legenda longa item tres", Value: 75},
+			{Label: "Legenda longa item quatro", Value: 65},
+			{Label: "Legenda longa item cinco", Value: 55},
+			{Label: "Legenda longa item seis", Value: 45},
+		},
+	}}
+
+	wide := NewColumnChart("Teste", cards)
+	wide.ValueMode = ValueModeNumber
+	wide.Width = 1800
+
+	wideSVG, err := wide.RenderSVG()
+	if err != nil {
+		t.Fatalf("RenderSVG wide failed: %v", err)
+	}
+	wideH, ok := extractViewBoxHeight(wideSVG)
+	if !ok {
+		t.Fatalf("could not parse wide svg viewBox height")
+	}
+	if wideH >= 500 {
+		t.Fatalf("expected compact auto height with one legend row, got %d", wideH)
+	}
+
+	narrow := NewColumnChart("Teste", cards)
+	narrow.ValueMode = ValueModeNumber
+	narrow.Width = 760
+
+	narrowSVG, err := narrow.RenderSVG()
+	if err != nil {
+		t.Fatalf("RenderSVG narrow failed: %v", err)
+	}
+	narrowH, ok := extractViewBoxHeight(narrowSVG)
+	if !ok {
+		t.Fatalf("could not parse narrow svg viewBox height")
+	}
+
+	if narrowH <= wideH {
+		t.Fatalf("expected taller svg when legend wraps to multiple rows, wide=%d narrow=%d", wideH, narrowH)
+	}
+}
+
 func TestBarSVGIsValid(t *testing.T) {
 	chart := buildBarChartFixture()
 	svg, err := chart.RenderSVG()

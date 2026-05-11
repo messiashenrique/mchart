@@ -60,6 +60,12 @@ func buildColumnExampleChart() *mchart.ColumnChart {
 		{
 			Title: "Emissão por setor",
 			Bars: []mchart.ColumnBar{
+				// {Label: "Q1", Value: 100.0},
+				// {Label: "Q2", Value: 75.0},
+				// {Label: "Q3", Value: 56.25},
+				// {Label: "Q4", Value: 68.75},
+				// {Label: "Q5", Value: 75.0},
+				// {Label: "Q6TYMQi", Value: 0.0},
 				{Label: "Escritório", Value: 100.0},
 				{Label: "Auditório", Value: 75.0},
 				{Label: "Almoxarifado", Value: 56.25},

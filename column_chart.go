@@ -64,7 +64,7 @@ func NewColumnChart(title string, cards []ColumnCard) *ColumnChart {
 		Cards:        cards,
 		Width:        0,
 		MinWidth:     520,
-		Height:       500,
+		Height:       0,
 		Padding:      20,
 		CardGap:      20,
 		ValueMode:    ValueModePercent,
@@ -79,7 +79,7 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 	}
 
 	canvasWidth := cc.resolveCanvasWidth()
-	canvasHeight := cc.resolveCanvasHeight()
+	canvasHeight := cc.resolveCanvasHeight(canvasWidth)
 	colors := cc.resolveStyleColors()
 
 	var b strings.Builder
@@ -397,11 +397,165 @@ func (cc *ColumnChart) resolveCanvasWidth() int {
 	return width
 }
 
-func (cc *ColumnChart) resolveCanvasHeight() int {
+func (cc *ColumnChart) resolveCanvasHeight(canvasWidth int) int {
 	if cc.Height > 0 {
 		return cc.Height
 	}
-	return 420
+
+	if len(cc.Cards) == 0 {
+		return 420
+	}
+
+	padding := cc.Padding
+	if padding <= 0 {
+		padding = 20
+	}
+	cardGap := cc.CardGap
+	if cardGap < 0 {
+		cardGap = 0
+	}
+
+	availableWidth := float64(canvasWidth - (2 * padding) - ((len(cc.Cards) - 1) * cardGap))
+	if availableWidth <= 0 {
+		return 420
+	}
+	cardW := availableWidth / float64(len(cc.Cards))
+
+	maxCardHeight := 0.0
+	for _, card := range cc.Cards {
+		cardHeight := cc.resolveCardHeight(card, cardW)
+		if cardHeight > maxCardHeight {
+			maxCardHeight = cardHeight
+		}
+	}
+	if maxCardHeight <= 0 {
+		maxCardHeight = 340
+	}
+
+	height := int(math.Ceil(float64(2*padding+40) + maxCardHeight))
+	if height < 420 {
+		height = 420
+	}
+	return height
+}
+
+func (cc *ColumnChart) resolveCardHeight(card ColumnCard, cardW float64) float64 {
+	headerOnlyHeight := 88.0
+	if len(card.Bars) == 0 {
+		return headerOnlyHeight
+	}
+
+	innerPad := 16.0
+	barsY := 45.0
+	barH := 180.0
+	labelAndValueBottom := barsY + barH + 55.0
+
+	barsAreaW := cardW - (innerPad * 2)
+	barsCount := float64(len(card.Bars))
+	gap := 16.0
+	barW := (barsAreaW - gap*(barsCount-1)) / barsCount
+	maxBarW := 96.0
+	minBarW := 36.0
+	if barW > maxBarW {
+		barW = maxBarW
+	}
+	if barW < minBarW {
+		gap = 8
+		barW = (barsAreaW - gap*(barsCount-1)) / barsCount
+		if barW < minBarW {
+			barW = minBarW
+		}
+	}
+
+	if !cc.shouldShowLegend(card.Bars, barW) {
+		return labelAndValueBottom + 24
+	}
+
+	legendY := barsY + barH + 90.0
+	legendMaxWidth := cardW - (innerPad * 2)
+	legendRows := cc.resolveLegendRows(card.Bars, legendMaxWidth)
+	if legendRows < 1 {
+		legendRows = 1
+	}
+
+	lineHeight := 24.0
+	legendBottom := legendY + float64(legendRows-1)*lineHeight
+	return legendBottom + 20
+}
+
+func (cc *ColumnChart) resolveLegendRows(bars []ColumnBar, legendMaxWidth float64) int {
+	if len(bars) == 0 {
+		return 0
+	}
+	if legendMaxWidth <= 0 {
+		return len(bars)
+	}
+
+	swatchW := 10.0
+	gapAfterSwatch := 6.0
+	minColumnGap := 22.0
+	rowGap := 14.0
+	legendFontSize := 18.0
+	valueMode := cc.resolvedValueMode()
+
+	type legendEntry struct {
+		width float64
+	}
+
+	entries := make([]legendEntry, 0, len(bars))
+	for bi, bar := range bars {
+		label := strings.TrimSpace(bar.Label)
+		if label == "" {
+			label = fmt.Sprintf("Item %d", bi+1)
+		}
+		itemText := fmt.Sprintf("%d: %s", bi+1, label)
+
+		itemWidth := estimateTextWidth(itemText, legendFontSize) * 1.1
+		if valueMode != ValueModePercent {
+			itemWidth += swatchW + gapAfterSwatch
+		}
+		entries = append(entries, legendEntry{width: itemWidth})
+	}
+
+	totalOneRow := 0.0
+	for i, entry := range entries {
+		totalOneRow += entry.width
+		if i > 0 {
+			totalOneRow += rowGap
+		}
+	}
+	if totalOneRow <= legendMaxWidth {
+		return 1
+	}
+
+	maxCols := len(entries)
+	if maxCols > 4 {
+		maxCols = 4
+	}
+
+	for cols := maxCols; cols >= 2; cols-- {
+		colWidths := make([]float64, cols)
+		for idx, entry := range entries {
+			col := idx % cols
+			if entry.width > colWidths[col] {
+				colWidths[col] = entry.width
+			}
+		}
+
+		sumWidths := 0.0
+		for _, w := range colWidths {
+			sumWidths += w
+		}
+
+		minTotal := sumWidths + minColumnGap*float64(cols-1)
+		if minTotal > legendMaxWidth {
+			continue
+		}
+
+		return int(math.Ceil(float64(len(entries)) / float64(cols)))
+	}
+
+	return len(entries)
 }
 
 func (cc *ColumnChart) resolvedLegendPolicy() ColumnLegendPolicy {
