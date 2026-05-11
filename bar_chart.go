@@ -73,7 +73,7 @@ func (bc *BarChart) RenderSVG() (string, error) {
 
 	rowHeight := 58.0
 	rowGap := float64(bc.resolveRowGap())
-	rowsStartY := float64(padding + 64)
+	rowsStartY := float64(padding + 50)
 	trackH := 14.0
 	trackYShift := 26.0
 	trackX := float64(padding)
@@ -82,14 +82,14 @@ func (bc *BarChart) RenderSVG() (string, error) {
 	var b strings.Builder
 	fmt.Fprintf(&b, `<svg viewBox="0 0 %d %d" xmlns="http://www.w3.org/2000/svg">`, canvasWidth, canvasHeight)
 	fmt.Fprintf(&b, `<style>
-		.title { fill: %s; font-size: 28px; font-weight: 600; }
-		.row-label { fill: %s; font-size: 20px; font-weight: 500; }
-		.row-value { fill: %s; font-size: 22px; font-weight: 600; }
+		.title { fill: %s; font-size: 21px; font-weight: 600; }
+		.row-label { fill: %s; font-size: 18px; font-weight: 500; }
+		.row-value { fill: %s; font-size: 19px; font-weight: 600; }
 		.track { fill: %s; }
 		text { font-family: "Inter", "Segoe UI", "Roboto", "Arial", sans-serif; }
 	</style>`, colors.title, colors.rowLabel, colors.rowValue, colors.track)
 
-	fmt.Fprintf(&b, `<text class="title" x="%d" y="%d">%s</text>`, padding, padding+24, html.EscapeString(bc.Title))
+	fmt.Fprintf(&b, `<text class="title" x="%d" y="%d">%s</text>`, padding, padding+16, html.EscapeString(bc.Title))
 
 	for i, bar := range bc.Bars {
 		rowTop := rowsStartY + float64(i)*(rowHeight+rowGap)
@@ -213,12 +213,18 @@ func (bc *BarChart) resolveCanvasHeight() int {
 
 	padding := bc.resolvePadding()
 	rowGap := bc.resolveRowGap()
-	rowHeight := 58
-	rowsH := len(bc.Bars) * rowHeight
-	if len(bc.Bars) > 1 {
-		rowsH += (len(bc.Bars) - 1) * rowGap
+	if len(bc.Bars) == 0 {
+		return (padding * 2) + 64
 	}
-	return (padding * 2) + 64 + rowsH + 12
+
+	rowHeight := 58
+	rowsStartY := padding + 50
+	trackYShift := 26
+	trackH := 14
+	lastRowTop := rowsStartY + (len(bc.Bars)-1)*(rowHeight+rowGap)
+	contentBottom := lastRowTop + trackYShift + trackH
+
+	return contentBottom + padding
 }
 
 func (bc *BarChart) resolvePadding() int {

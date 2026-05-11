@@ -341,8 +341,8 @@ func TestDonutLongLabelsMoveLegendToBottom(t *testing.T) {
 	if !ok {
 		t.Fatalf("could not parse svg viewBox height")
 	}
-	if height <= 520 {
-		t.Fatalf("expected auto-expanded height for long bottom legend, got %d", height)
+	if height == 520 {
+		t.Fatalf("expected dynamic height for long bottom legend, got fixed default %d", height)
 	}
 }
 

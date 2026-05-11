@@ -1,7 +1,7 @@
 <svg viewBox="0 0 820 520" xmlns="http://www.w3.org/2000/svg"><style>
-		.title { fill: #111111; font-size: 34px; font-weight: 600; }
-		.slice-value { fill: #111111; font-size: 16px; font-weight: 600; }
-		.legend-text { fill: #333333; font-size: 20px; font-weight: 500; }
+		.title { fill: #111111; font-size: 21px; font-weight: 600; }
+		.slice-value { fill: #111111; font-size: 18px; font-weight: 600; }
+		.legend-text { fill: #333333; font-size: 16px; font-weight: 500; }
 		.legend-dot { stroke: none; }
 		.slice-label-line { fill: none; stroke-width: 1.5; stroke-linecap: round; }
 		text { font-family: "Inter", "Segoe UI", "Roboto", "Arial", sans-serif; }

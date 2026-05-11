@@ -65,7 +65,7 @@ func (dc *DonutChart) RenderSVG() (string, error) {
 		return "", ErrEmptySVG
 	}
 
-	fontSizeLegend := 30.0
+	fontSizeLegend := 16.0
 	maxLabelW := 0.0
 	for i, slice := range dc.Slices {
 		label := dc.sliceLabel(i, slice)
@@ -76,19 +76,20 @@ func (dc *DonutChart) RenderSVG() (string, error) {
 	}
 
 	legendBottom := maxLabelW > 210
-	legendFontSize := 30.0
-	legendLineH := 34.0
+	legendFontSize := 16.0
+	legendLineH := 24.0
 	legendItemGap := 6.0
 	dotR := 8.0
 
 	legendItems := make([]donutLegendItem, 0, len(dc.Slices))
 
-	var cx, cy, outerR float64
+	var cx, cy, outerR, legendTop float64
 	innerRRatio := 0.50
 	if legendBottom {
 		cx = float64(canvasW) / 2
-		cy = float64(baseCanvasH)*0.42 + 8
 		outerR = math.Min(float64(canvasW)*0.24, float64(baseCanvasH)*0.26)
+		titleY := float64(padding + 28)
+		cy = titleY + 38 + outerR
 
 		legendTextMaxW := float64(canvasW - 88)
 		if legendTextMaxW < 120 {
@@ -115,11 +116,8 @@ func (dc *DonutChart) RenderSVG() (string, error) {
 			}
 		}
 
-		legendTop := cy + outerR + 36
-		requiredH := int(math.Ceil(legendTop + totalLegendH + 24))
-		if requiredH > canvasH {
-			canvasH = requiredH
-		}
+		legendTop = cy + outerR + 40
+		canvasH = int(math.Ceil(legendTop + totalLegendH + 24))
 	} else {
 		cx = float64(canvasW) * 0.33
 		cy = float64(baseCanvasH) * 0.52
@@ -130,9 +128,9 @@ func (dc *DonutChart) RenderSVG() (string, error) {
 	var b strings.Builder
 	fmt.Fprintf(&b, `<svg viewBox="0 0 %d %d" xmlns="http://www.w3.org/2000/svg">`, canvasW, canvasH)
 	fmt.Fprintf(&b, `<style>
-		.title { fill: %s; font-size: 34px; font-weight: 600; }
-		.slice-value { fill: %s; font-size: 16px; font-weight: 600; }
-		.legend-text { fill: %s; font-size: 20px; font-weight: 500; }
+		.title { fill: %s; font-size: 21px; font-weight: 600; }
+		.slice-value { fill: %s; font-size: 18px; font-weight: 600; }
+		.legend-text { fill: %s; font-size: 16px; font-weight: 500; }
 		.legend-dot { stroke: none; }
 		.slice-label-line { fill: none; stroke-width: 1.5; stroke-linecap: round; }
 		text { font-family: "Inter", "Segoe UI", "Roboto", "Arial", sans-serif; }
@@ -181,7 +179,6 @@ func (dc *DonutChart) RenderSVG() (string, error) {
 
 	if legendBottom {
 		fmt.Fprint(&b, `<g class="legend legend-bottom">`)
-		legendTop := cy + outerR + 30
 		dc.renderLegendBottom(&b, legendItems, legendTop, legendLineH, legendItemGap, dotR)
 		fmt.Fprint(&b, `</g>`)
 	} else {
