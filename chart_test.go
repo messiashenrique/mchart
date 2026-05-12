@@ -407,6 +407,91 @@ func TestSplineDarkThemeChangesKeyColors(t *testing.T) {
 	}
 }
 
+func TestFunnelSVGIsValid(t *testing.T) {
+	chart := buildFunnelChartFixture()
+	svg, err := chart.RenderSVG()
+	if err != nil {
+		t.Fatalf("RenderSVG failed: %v", err)
+	}
+	assertValidSVG(t, svg)
+	assertGoldenNormalized(t, "testdata/funnel.svg.golden", svg)
+}
+
+func TestFunnelUsesDefaultPaletteWhenColorMissing(t *testing.T) {
+	chart := NewFunnelChart("Teste", []FunnelSection{
+		{Label: "A", Value: 100},
+		{Label: "B", Value: 80},
+		{Label: "C", Value: 60},
+		{Label: "D", Value: 40},
+		{Label: "E", Value: 20},
+		{Label: "F", Value: 10},
+	})
+
+	svg, err := chart.RenderSVG()
+	if err != nil {
+		t.Fatalf("RenderSVG failed: %v", err)
+	}
+
+	if !strings.Contains(svg, defaultColumnPalette[0]) || !strings.Contains(svg, defaultColumnPalette[5]) {
+		t.Fatalf("expected default palette colors in funnel svg")
+	}
+	if !strings.Contains(svg, `class="legend-link"`) {
+		t.Fatalf("expected legend connector lines in funnel svg")
+	}
+}
+
+func TestFunnelDarkThemeChangesTypographyColors(t *testing.T) {
+	chart := buildFunnelChartFixture()
+	chart.Theme = FunnelThemeDark
+
+	svg, err := chart.RenderSVG()
+	if err != nil {
+		t.Fatalf("RenderSVG failed: %v", err)
+	}
+
+	for _, color := range []string{"#f3f4f6", "#f9fafb", "#e5e7eb"} {
+		if !strings.Contains(svg, color) {
+			t.Fatalf("expected dark theme color %s in funnel svg", color)
+		}
+	}
+}
+
+func TestFunnelValueModeIntegerRemovesDecimals(t *testing.T) {
+	chart := NewFunnelChart("Teste", []FunnelSection{
+		{Label: "A", Value: 700},
+		{Label: "B", Value: 600},
+	})
+	chart.ValueMode = FunnelValueInteger
+
+	svg, err := chart.RenderSVG()
+	if err != nil {
+		t.Fatalf("RenderSVG failed: %v", err)
+	}
+
+	if !strings.Contains(svg, ">700</text>") || !strings.Contains(svg, ">600</text>") {
+		t.Fatalf("expected integer value labels in funnel svg")
+	}
+	if strings.Contains(svg, "700,00") || strings.Contains(svg, "600,00") {
+		t.Fatalf("did not expect decimal value labels in integer mode")
+	}
+}
+
+func TestFunnelValueModeFloatKeepsTwoDecimals(t *testing.T) {
+	chart := NewFunnelChart("Teste", []FunnelSection{
+		{Label: "A", Value: 700},
+	})
+	chart.ValueMode = FunnelValueFloat
+
+	svg, err := chart.RenderSVG()
+	if err != nil {
+		t.Fatalf("RenderSVG failed: %v", err)
+	}
+
+	if !strings.Contains(svg, ">700,00</text>") {
+		t.Fatalf("expected decimal value labels in float mode")
+	}
+}
+
 func TestWriteSVGAndWritePNG(t *testing.T) {
 	chart := NewSpiderChart(
 		[]string{"A", "B", "C"},

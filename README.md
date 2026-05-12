@@ -117,6 +117,24 @@ chart.Theme = mchart.SplineThemeLight
 
 ![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/spline.png)
 
+#### 6) FunnelChart
+
+```go
+sections := []mchart.FunnelSection{
+  {Label: "> 4 pontos", Value: 700},
+  {Label: "> de 5 pontos", Value: 600},
+  {Label: "> de 6 pontos", Value: 500},
+  {Label: "> de 7 pontos", Value: 400},
+  {Label: "> de 8 pontos", Value: 300},
+  {Label: "> de 9 pontos", Value: 70},
+}
+chart := mchart.NewFunnelChart("Distribuição de estudantes por notas", sections)
+chart.ValueMode = mchart.FunnelValueInteger
+chart.Theme = mchart.FunnelThemeLight
+```
+
+![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/funnel.png)
+
 ### Themes and default colors
 
 - Light theme is the default across charts.
@@ -134,7 +152,7 @@ All charts support:
 
 ### Runnable examples
 
-Generate the 5 demo SVG files:
+Generate the 6 demo SVG files:
 
 ```bash
 go run ./examples/all-charts
@@ -144,4 +162,4 @@ Generated output: `examples/all-charts/out/`.
 
 ### Version
 
-`v0.1.3`
+`v0.1.4`

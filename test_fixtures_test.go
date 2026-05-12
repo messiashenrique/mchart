@@ -101,3 +101,19 @@ func buildSplineChartFixture() *SplineChart {
 	chart.Height = 520
 	return chart
 }
+
+func buildFunnelChartFixture() *FunnelChart {
+	sections := []FunnelSection{
+		{Label: "North America", Value: 700},
+		{Label: "South America", Value: 600},
+		{Label: "Africa", Value: 500},
+		{Label: "Asia", Value: 400},
+		{Label: "Oceania", Value: 300},
+		{Label: "Europe", Value: 200},
+	}
+
+	chart := NewFunnelChart("Pipeline por região", sections)
+	chart.Width = 820
+	chart.Height = 540
+	return chart
+}

@@ -18,13 +18,14 @@ func main() {
 		}
 	}
 
-	outputs := make([]chartOutput, 0, 5)
+	outputs := make([]chartOutput, 0, 6)
 
 	outputs = append(outputs, chartOutput{name: "column_chart", chart: buildColumnExampleChart()})
 	outputs = append(outputs, chartOutput{name: "spider_chart", chart: buildSpiderExampleChart()})
 	outputs = append(outputs, chartOutput{name: "bar_chart", chart: buildBarExampleChart()})
 	outputs = append(outputs, chartOutput{name: "donut_chart", chart: buildDonutExampleChart()})
 	outputs = append(outputs, chartOutput{name: "spline_chart", chart: buildSplineExampleChart()})
+	outputs = append(outputs, chartOutput{name: "funnel_chart", chart: buildFunnelExampleChart()})
 
 	outputDir := filepath.Join("examples", "all-charts", "out")
 	if err := os.MkdirAll(outputDir, 0o755); err != nil {
@@ -125,5 +126,20 @@ func buildSplineExampleChart() *mchart.SplineChart {
 		{Label: "series2", Values: []float64{11, 32, 45, 32, 34, 52, 41}},
 	}
 	chart := mchart.NewSplineChart("Resumo por mês", labels, series)
+	return chart
+}
+
+func buildFunnelExampleChart() *mchart.FunnelChart {
+	sections := []mchart.FunnelSection{
+		{Label: "> 4 pontos", Value: 700},
+		{Label: "> de 5 pontos", Value: 600},
+		{Label: "> de 6 pontos", Value: 500},
+		{Label: "> de 7 pontos", Value: 400},
+		{Label: "> de 8 pontos", Value: 300},
+		{Label: "> de 9 pontos", Value: 70},
+	}
+	chart := mchart.NewFunnelChart("Distribuição de estudantes por notas", sections)
+	chart.ValueMode = mchart.FunnelValueInteger
+	chart.Theme = mchart.FunnelThemeLight
 	return chart
 }
