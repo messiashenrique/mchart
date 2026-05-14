@@ -83,14 +83,14 @@ func TestColumnDarkThemeChangesKeyColors(t *testing.T) {
 		t.Fatalf("RenderSVG failed: %v", err)
 	}
 
-	for _, expected := range []string{"#111827", "#374151", "#f3f4f6"} {
+	for _, expected := range []string{"#1f2937", "#4b5563", "#f3f4f6"} {
 		if !strings.Contains(svg, expected) {
 			t.Fatalf("expected dark theme color %s in column svg", expected)
 		}
 	}
 }
 
-func TestColumnPercentModeUsesThresholdColorsAndNoLegendSwatch(t *testing.T) {
+func TestColumnPercentColorModeUsesThresholdColorsAndNoLegendSwatch(t *testing.T) {
 	chart := NewColumnChart("Teste", []ColumnCard{{
 		Title: "A",
 		Bars: []ColumnBar{
@@ -100,7 +100,7 @@ func TestColumnPercentModeUsesThresholdColorsAndNoLegendSwatch(t *testing.T) {
 			{Label: "Muito grande para forçar legenda quatro", Value: 35},
 		},
 	}})
-	chart.ValueMode = ValueModePercent
+	chart.ValueMode = ValueModePercentColor
 	chart.Width = 900
 
 	svg, err := chart.RenderSVG()
@@ -116,11 +116,37 @@ func TestColumnPercentModeUsesThresholdColorsAndNoLegendSwatch(t *testing.T) {
 	if strings.Contains(svg, `<rect x="`) {
 		// prevent false positives: swatches are small rects with rx="2".
 		if strings.Contains(svg, `rx="2" fill="#`) {
-			t.Fatalf("percent mode legend should not include color swatches")
+			t.Fatalf("percent color mode legend should not include color swatches")
 		}
 	}
 	if !strings.Contains(svg, "%") {
 		t.Fatalf("expected percent symbol in value labels")
+	}
+}
+
+func TestColumnPercentModeUsesPaletteAndLegendSwatch(t *testing.T) {
+	bars := make([]ColumnBar, 12)
+	for i := range bars {
+		bars[i] = ColumnBar{Label: "Label muito grande " + ptNumber(float64(i)), Value: float64(i + 1)}
+	}
+
+	chart := NewColumnChart("Teste", []ColumnCard{{Title: "A", Bars: bars}})
+	chart.ValueMode = ValueModePercent
+	chart.Width = 900
+
+	svg, err := chart.RenderSVG()
+	if err != nil {
+		t.Fatalf("RenderSVG failed: %v", err)
+	}
+
+	if !strings.Contains(svg, defaultColumnPalette[0]) || !strings.Contains(svg, defaultColumnPalette[9]) {
+		t.Fatalf("expected default palette colors in percent mode")
+	}
+	if !strings.Contains(svg, "%") {
+		t.Fatalf("percent mode should include percent sign")
+	}
+	if !strings.Contains(svg, `rx="2" fill="#`) {
+		t.Fatalf("percent mode legend should include color swatches")
 	}
 }
 

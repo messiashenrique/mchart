@@ -58,6 +58,8 @@ cards := []mchart.ColumnCard{
 
 chart := mchart.NewColumnChart("Portarias emitidas.", cards)
 chart.ValueMode = mchart.ValueModeNumber
+// chart.ValueMode = mchart.ValueModePercent      // percent values + default palette
+// chart.ValueMode = mchart.ValueModePercentColor // percent values + threshold colors
 ```
 
 ![image](https://raw.githubusercontent.com/messiashenrique/mchart/main/images/columns.png)
@@ -162,4 +164,4 @@ Generated output: `examples/all-charts/out/`.
 
 ### Version
 
-`v0.1.4`
+`v0.1.5`

@@ -10,8 +10,9 @@ import (
 type ColumnValueMode string
 
 const (
-	ValueModePercent ColumnValueMode = "percent"
-	ValueModeNumber  ColumnValueMode = "number"
+	ValueModePercent      ColumnValueMode = "percent"
+	ValueModeNumber       ColumnValueMode = "number"
+	ValueModePercentColor ColumnValueMode = "percent_color"
 )
 
 type ColumnLegendPolicy string
@@ -86,28 +87,23 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 
 	fmt.Fprintf(&b, `<svg viewBox="0 0 %d %d" xmlns="http://www.w3.org/2000/svg">`, canvasWidth, canvasHeight)
 	fmt.Fprintf(&b, `<style>
-		.title { fill: %s; font-size: 21px; font-weight: 600; }
-		.card { fill: %s; fill-opacity: 0.88; stroke: %s; stroke-width: 1; }
-		.card-title { fill: %s; font-size: 19px; font-weight: 600; }
-		.bar-slot { fill: %s; stroke: %s; stroke-width: 1; }
-		.bar-label { fill: %s; font-size: 19px; font-weight: 700; }
-		.bar-value { fill: %s; font-size: 18px; font-weight: 500; }
-		.legend-text { fill: %s; font-size: 16px; font-weight: 500; }
-		text { font-family: "Inter", "Segoe UI", "Roboto", "Arial", sans-serif; }
-	</style>`, colors.title, colors.cardFill, colors.cardStroke, colors.cardTitle, colors.barSlotFill, colors.barSlotStroke, colors.barLabel, colors.barValue, colors.legendText)
+			.title { fill: %s; font-size: 21px; font-weight: 600; }
+			.card-title { fill: %s; font-size: 19px; font-weight: 600; }
+			.bar-slot { fill: %s; stroke: %s; stroke-width: 1; }
+			.bar-label { fill: %s; font-size: 19px; font-weight: 700; }
+			.bar-value { fill: %s; font-size: 18px; font-weight: 500; }
+			.legend-text { fill: %s; font-size: 16px; font-weight: 500; }
+			text { font-family: "Inter", "Segoe UI", "Roboto", "Arial", sans-serif; }
+		</style>`, colors.title, colors.cardTitle, colors.barSlotFill, colors.barSlotStroke, colors.barLabel, colors.barValue, colors.legendText)
 
 	fmt.Fprintf(&b, `<text class="title" x="%d" y="%d">%s</text>`, cc.Padding, cc.Padding+24, html.EscapeString(cc.Title))
 
 	cardsCount := float64(len(cc.Cards))
 	availableWidth := float64(canvasWidth - (2 * cc.Padding) - ((len(cc.Cards) - 1) * cc.CardGap))
 	cardW := availableWidth / cardsCount
-	cardH := float64(canvasHeight - (cc.Padding * 2) - 40)
 	cardY := float64(cc.Padding + 40)
-	valueMode := cc.resolvedValueMode()
-
 	for i, card := range cc.Cards {
 		cardX := float64(cc.Padding) + float64(i)*(cardW+float64(cc.CardGap))
-		fmt.Fprintf(&b, `<rect class="card" x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="14" />`, cardX, cardY, cardW, cardH)
 
 		innerPad := 16.0
 		headerY := cardY + 30
@@ -214,7 +210,7 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 				itemText := fmt.Sprintf("%d: %s", bi+1, label)
 
 				itemWidth := estimateTextWidth(itemText, legendFontSize) * 1.1
-				if valueMode != ValueModePercent {
+				if cc.shouldShowLegendSwatch() {
 					itemWidth += swatchW + gapAfterSwatch
 				}
 
@@ -227,7 +223,7 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 
 			renderEntry := func(entry legendEntry, x, y float64) {
 				textX := x
-				if valueMode != ValueModePercent {
+				if cc.shouldShowLegendSwatch() {
 					fmt.Fprintf(&b, `<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="2" fill="%s" />`, x, y-10, swatchW, swatchW, entry.color)
 					textX = x + swatchW + gapAfterSwatch
 				}
@@ -351,10 +347,12 @@ func (cc *ColumnChart) resolvedValueMode() ColumnValueMode {
 	if cc.ValueMode == "" {
 		return ValueModePercent
 	}
-	if cc.ValueMode != ValueModePercent && cc.ValueMode != ValueModeNumber {
+	switch cc.ValueMode {
+	case ValueModePercent, ValueModeNumber, ValueModePercentColor:
+		return cc.ValueMode
+	default:
 		return ValueModePercent
 	}
-	return cc.ValueMode
 }
 
 func (cc *ColumnChart) resolveCanvasWidth() int {
@@ -496,8 +494,6 @@ func (cc *ColumnChart) resolveLegendRows(bars []ColumnBar, legendMaxWidth float6
 	minColumnGap := 22.0
 	rowGap := 14.0
 	legendFontSize := 18.0
-	valueMode := cc.resolvedValueMode()
-
 	type legendEntry struct {
 		width float64
 	}
@@ -511,7 +507,7 @@ func (cc *ColumnChart) resolveLegendRows(bars []ColumnBar, legendMaxWidth float6
 		itemText := fmt.Sprintf("%d: %s", bi+1, label)
 
 		itemWidth := estimateTextWidth(itemText, legendFontSize) * 1.1
-		if valueMode != ValueModePercent {
+		if cc.shouldShowLegendSwatch() {
 			itemWidth += swatchW + gapAfterSwatch
 		}
 		entries = append(entries, legendEntry{width: itemWidth})
@@ -591,8 +587,6 @@ func (cc *ColumnChart) resolvedTheme() ColumnTheme {
 
 type columnStyleColors struct {
 	title         string
-	cardFill      string
-	cardStroke    string
 	cardTitle     string
 	barSlotFill   string
 	barSlotStroke string
@@ -605,8 +599,6 @@ func (cc *ColumnChart) resolveStyleColors() columnStyleColors {
 	if cc.resolvedTheme() == ColumnThemeDark {
 		return columnStyleColors{
 			title:         "#f3f4f6",
-			cardFill:      "#111827",
-			cardStroke:    "#374151",
 			cardTitle:     "#f9fafb",
 			barSlotFill:   "#1f2937",
 			barSlotStroke: "#4b5563",
@@ -617,8 +609,6 @@ func (cc *ColumnChart) resolveStyleColors() columnStyleColors {
 	}
 	return columnStyleColors{
 		title:         "#111111",
-		cardFill:      "#ffffff",
-		cardStroke:    "#d1d5db",
 		cardTitle:     "#111111",
 		barSlotFill:   "#f8fafc",
 		barSlotStroke: "#d1d5db",
@@ -633,7 +623,7 @@ func (cc *ColumnChart) resolveBarColor(index int, bar ColumnBar) string {
 		return bar.Color
 	}
 
-	if cc.resolvedValueMode() == ValueModePercent {
+	if cc.usesScoreColorScale() {
 		return scoreColor(bar.Value)
 	}
 
@@ -645,7 +635,7 @@ func (cc *ColumnChart) resolveBarColor(index int, bar ColumnBar) string {
 }
 
 func (cc *ColumnChart) resolveMaxValue(bars []ColumnBar) float64 {
-	if cc.resolvedValueMode() == ValueModePercent {
+	if cc.isPercentMode() {
 		return 100
 	}
 
@@ -662,7 +652,7 @@ func (cc *ColumnChart) resolveMaxValue(bars []ColumnBar) float64 {
 }
 
 func (cc *ColumnChart) resolveBarRatio(value, maxValue float64) float64 {
-	if cc.resolvedValueMode() == ValueModePercent {
+	if cc.isPercentMode() {
 		return clamp(value, 0, 100) / 100.0
 	}
 	if maxValue <= 0 {
@@ -672,10 +662,27 @@ func (cc *ColumnChart) resolveBarRatio(value, maxValue float64) float64 {
 }
 
 func (cc *ColumnChart) formatValue(value float64) string {
-	if cc.resolvedValueMode() == ValueModePercent {
+	if cc.isPercentMode() {
 		return ptPercent(value)
 	}
 	return ptNumber(value)
+}
+
+func (cc *ColumnChart) isPercentMode() bool {
+	switch cc.resolvedValueMode() {
+	case ValueModePercent, ValueModePercentColor:
+		return true
+	default:
+		return false
+	}
+}
+
+func (cc *ColumnChart) usesScoreColorScale() bool {
+	return cc.resolvedValueMode() == ValueModePercentColor
+}
+
+func (cc *ColumnChart) shouldShowLegendSwatch() bool {
+	return !cc.usesScoreColorScale()
 }
 
 func scoreColor(percent float64) string {
