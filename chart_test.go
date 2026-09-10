@@ -83,9 +83,34 @@ func TestColumnDarkThemeChangesKeyColors(t *testing.T) {
 		t.Fatalf("RenderSVG failed: %v", err)
 	}
 
-	for _, expected := range []string{"#1f2937", "#4b5563", "#f3f4f6"} {
+	for _, expected := range []string{"#4b5563", "#d1d5db", "#f3f4f6"} {
 		if !strings.Contains(svg, expected) {
 			t.Fatalf("expected dark theme color %s in column svg", expected)
+		}
+	}
+}
+
+func TestColumnUsesSimpleGridLayout(t *testing.T) {
+	chart := NewColumnChart("Teste", []ColumnCard{{
+		Title: "A",
+		Bars:  []ColumnBar{{Label: "Cirurgia Geral", Value: 37.5}},
+	}})
+	chart.LegendPolicy = LegendAlways
+
+	svg, err := chart.RenderSVG()
+	if err != nil {
+		t.Fatalf("RenderSVG failed: %v", err)
+	}
+
+	if strings.Contains(svg, "bar-slot") {
+		t.Fatalf("simple column layout should not render bar slots")
+	}
+	if strings.Count(svg, `class="grid"`) != 5 {
+		t.Fatalf("expected five horizontal grid lines")
+	}
+	for _, expected := range []string{"0%", "25%", "50%", "75%", "100%", "37,50%"} {
+		if !strings.Contains(svg, expected) {
+			t.Fatalf("expected %q in column svg", expected)
 		}
 	}
 }

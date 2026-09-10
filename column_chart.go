@@ -89,12 +89,13 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 	fmt.Fprintf(&b, `<style>
 			.title { fill: %s; font-size: 21px; font-weight: 600; }
 			.card-title { fill: %s; font-size: 19px; font-weight: 600; }
-			.bar-slot { fill: %s; stroke: %s; stroke-width: 1; }
-			.bar-label { fill: %s; font-size: 19px; font-weight: 700; }
-			.bar-value { fill: %s; font-size: 18px; font-weight: 500; }
+			.grid { stroke: %s; stroke-width: 1; }
+			.axis-text { fill: %s; font-size: 12px; font-weight: 400; }
+			.bar-label { fill: %s; font-size: 13px; font-weight: 500; }
+			.bar-value { fill: %s; font-size: 12px; font-weight: 700; }
 			.legend-text { fill: %s; font-size: 16px; font-weight: 500; }
 			text { font-family: "Inter", "Segoe UI", "Roboto", "Arial", sans-serif; }
-		</style>`, colors.title, colors.cardTitle, colors.barSlotFill, colors.barSlotStroke, colors.barLabel, colors.barValue, colors.legendText)
+		</style>`, colors.title, colors.cardTitle, colors.gridStroke, colors.axisText, colors.barLabel, colors.barValue, colors.legendText)
 
 	fmt.Fprintf(&b, `<text class="title" x="%d" y="%d">%s</text>`, cc.Padding, cc.Padding+24, html.EscapeString(cc.Title))
 
@@ -113,13 +114,18 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 			continue
 		}
 
-		barsY := cardY + 45
-		barsAreaW := cardW - (innerPad * 2)
+		plotTop := cardY + 70
+		plotH := 180.0
+		plotBottom := plotTop + plotH
+		axisLabelW := 44.0
+		plotLeft := cardX + innerPad + axisLabelW
+		plotRight := cardX + cardW - innerPad
+		barsAreaW := plotRight - plotLeft
 		barsCount := float64(len(card.Bars))
-		gap := 16.0
+		gap := 24.0
 		barW := (barsAreaW - gap*(barsCount-1)) / barsCount
-		maxBarW := 96.0
-		minBarW := 36.0
+		maxBarW := 44.0
+		minBarW := 20.0
 		if barW > maxBarW {
 			barW = maxBarW
 		}
@@ -132,13 +138,12 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 		}
 
 		groupW := barW*barsCount + gap*(barsCount-1)
-		startX := cardX + (cardW-groupW)/2
-		minStartX := cardX + innerPad
+		startX := plotLeft + (barsAreaW-groupW)/2
+		minStartX := plotLeft
 		if startX < minStartX {
 			startX = minStartX
 		}
 
-		barH := 180.0
 		displayLabels := make([]string, len(card.Bars))
 		showLegend := cc.shouldShowLegend(card.Bars, barW)
 
@@ -156,36 +161,35 @@ func (cc *ColumnChart) RenderSVG() (string, error) {
 		}
 
 		maxValue := cc.resolveMaxValue(card.Bars)
+		for tick := 0; tick <= 4; tick++ {
+			ratio := float64(tick) / 4.0
+			y := plotBottom - ratio*plotH
+			fmt.Fprintf(&b, `<line class="grid" x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f" />`, plotLeft, y, plotRight, y)
+			fmt.Fprintf(&b, `<text class="axis-text" x="%.2f" y="%.2f" text-anchor="end" dominant-baseline="central">%s</text>`, plotLeft-8, y, cc.formatAxisValue(ratio*maxValue))
+		}
 
 		for bi, bar := range card.Bars {
 			x := startX + float64(bi)*(barW+gap)
 			value := bar.Value
 
-			fmt.Fprintf(&b, `<rect class="bar-slot" x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="14" />`, x, barsY, barW, barH)
-
 			fillColor := cc.resolveBarColor(bi, bar)
-
-			inset := 6.0
-			fillMaxH := barH - (inset * 2)
 			ratio := cc.resolveBarRatio(value, maxValue)
-			fillH := fillMaxH * ratio
-			if ratio <= 0 {
-				fillH = 3.0
-			}
-			if fillH > fillMaxH {
-				fillH = fillMaxH
-			}
-			fillY := barsY + barH - inset - fillH
-			fmt.Fprintf(&b, `<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="10" fill="%s" />`, x+inset, fillY, barW-(inset*2), fillH, fillColor)
+			fillH := plotH * ratio
+			fillY := plotBottom - fillH
+			fmt.Fprintf(&b, `<rect class="bar" x="%.2f" y="%.2f" width="%.2f" height="%.2f" rx="4" fill="%s" />`, x, fillY, barW, fillH, fillColor)
 
 			labelX := x + (barW / 2)
-			labelY := barsY + barH + 25
+			labelY := plotBottom + 24
 			fmt.Fprintf(&b, `<text class="bar-label" x="%.2f" y="%.2f" text-anchor="middle">%s</text>`, labelX, labelY, html.EscapeString(displayLabels[bi]))
-			fmt.Fprintf(&b, `<text class="bar-value" x="%.2f" y="%.2f" text-anchor="middle">%s</text>`, labelX, labelY+30, cc.formatValue(value))
+			valueY := fillY - 8
+			if fillH == 0 {
+				valueY = plotBottom - 8
+			}
+			fmt.Fprintf(&b, `<text class="bar-value" x="%.2f" y="%.2f" text-anchor="middle">%s</text>`, labelX, valueY, cc.formatValue(value))
 		}
 
 		if showLegend {
-			legendY := barsY + barH + 90
+			legendY := plotBottom + 70
 			legendX := cardX + innerPad
 			legendMaxWidth := cardW - (innerPad * 2)
 			lineHeight := 24.0
@@ -376,11 +380,12 @@ func (cc *ColumnChart) resolveCanvasWidth() int {
 		}
 	}
 
-	preferredBarW := 84.0
-	preferredGap := 16.0
+	preferredBarW := 44.0
+	preferredGap := 24.0
 	innerPad := 16.0
 	minCardW := 320.0
-	cardW := innerPad*2 + float64(maxBars)*preferredBarW + float64(maxBars-1)*preferredGap
+	axisLabelW := 44.0
+	cardW := innerPad*2 + axisLabelW + float64(maxBars)*preferredBarW + float64(maxBars-1)*preferredGap
 	if cardW < minCardW {
 		cardW = minCardW
 	}
@@ -444,16 +449,17 @@ func (cc *ColumnChart) resolveCardHeight(card ColumnCard, cardW float64) float64
 	}
 
 	innerPad := 16.0
-	barsY := 45.0
-	barH := 180.0
-	labelAndValueBottom := barsY + barH + 55.0
+	plotTop := 70.0
+	plotH := 180.0
+	labelBottom := plotTop + plotH + 24.0
 
-	barsAreaW := cardW - (innerPad * 2)
+	axisLabelW := 44.0
+	barsAreaW := cardW - (innerPad * 2) - axisLabelW
 	barsCount := float64(len(card.Bars))
-	gap := 16.0
+	gap := 24.0
 	barW := (barsAreaW - gap*(barsCount-1)) / barsCount
-	maxBarW := 96.0
-	minBarW := 36.0
+	maxBarW := 44.0
+	minBarW := 20.0
 	if barW > maxBarW {
 		barW = maxBarW
 	}
@@ -466,10 +472,10 @@ func (cc *ColumnChart) resolveCardHeight(card ColumnCard, cardW float64) float64
 	}
 
 	if !cc.shouldShowLegend(card.Bars, barW) {
-		return labelAndValueBottom + 24
+		return labelBottom + 24
 	}
 
-	legendY := barsY + barH + 90.0
+	legendY := plotTop + plotH + 70.0
 	legendMaxWidth := cardW - (innerPad * 2)
 	legendRows := cc.resolveLegendRows(card.Bars, legendMaxWidth)
 	if legendRows < 1 {
@@ -586,36 +592,43 @@ func (cc *ColumnChart) resolvedTheme() ColumnTheme {
 }
 
 type columnStyleColors struct {
-	title         string
-	cardTitle     string
-	barSlotFill   string
-	barSlotStroke string
-	barLabel      string
-	barValue      string
-	legendText    string
+	title      string
+	cardTitle  string
+	gridStroke string
+	axisText   string
+	barLabel   string
+	barValue   string
+	legendText string
 }
 
 func (cc *ColumnChart) resolveStyleColors() columnStyleColors {
 	if cc.resolvedTheme() == ColumnThemeDark {
 		return columnStyleColors{
-			title:         "#f3f4f6",
-			cardTitle:     "#f9fafb",
-			barSlotFill:   "#1f2937",
-			barSlotStroke: "#4b5563",
-			barLabel:      "#f3f4f6",
-			barValue:      "#e5e7eb",
-			legendText:    "#d1d5db",
+			title:      "#f3f4f6",
+			cardTitle:  "#f9fafb",
+			gridStroke: "#4b5563",
+			axisText:   "#d1d5db",
+			barLabel:   "#f3f4f6",
+			barValue:   "#e5e7eb",
+			legendText: "#d1d5db",
 		}
 	}
 	return columnStyleColors{
-		title:         "#111111",
-		cardTitle:     "#111111",
-		barSlotFill:   "#f8fafc",
-		barSlotStroke: "#d1d5db",
-		barLabel:      "#111111",
-		barValue:      "#111111",
-		legendText:    "#111111",
+		title:      "#111111",
+		cardTitle:  "#111111",
+		gridStroke: "#e5e7eb",
+		axisText:   "#6b7280",
+		barLabel:   "#111111",
+		barValue:   "#333333",
+		legendText: "#111111",
 	}
+}
+
+func (cc *ColumnChart) formatAxisValue(value float64) string {
+	if cc.isPercentMode() {
+		return fmt.Sprintf("%.0f%%", value)
+	}
+	return ptNumber(value)
 }
 
 func (cc *ColumnChart) resolveBarColor(index int, bar ColumnBar) string {

@@ -4,7 +4,6 @@ var defaultColumnPalette = []string{
 	"#8b5cf6",
 	"#24bc86",
 	"#ef4444",
-	// "#2646ff",
 	"#4D67FD",
 	"#d3Ea08",
 	"#ff7d33",
